@@ -1,0 +1,43 @@
+{
+  "custom_summary": "🚨 {{ALERT_NAME}} — gerou registros inválidos hoje!",
+  "evaluation": {
+    "source": {
+      "name": "contador",
+      "display": "contador",
+      "aggregation": "AGGREGATION_UNSPECIFIED"
+    },
+    "comparison_operator": "NOT_EQUAL",
+    "threshold": {
+      "value": {
+        "double_value": 0.0
+      }
+    },
+    "empty_result_state": "ERROR",
+    "notification": {
+      "retrigger_seconds": 1,
+      "notify_on_ok": true
+    }
+  },
+  "schedule": {
+    "quartz_cron_schedule": "57 0 8 * * ?",
+    "timezone_id": "America/Sao_Paulo"
+  },
+  "query_lines": [
+    "SELECT",
+    "  CONCAT(CAST(COUNT(*) AS STRING), '') AS registros_invalidos,",
+    "  COUNT(*) AS contador,",
+    "  from_utc_timestamp(current_timestamp(), 'America/Sao_Paulo')  AS horario_alerta",
+    "FROM `bees-teste-jp`.silver.quarantine_openbrewery",
+    "WHERE YEAR(from_utc_timestamp(updated_at,'America/Sao_Paulo')) = YEAR(current_timestamp())",
+    "AND MONTH(from_utc_timestamp(updated_at,'America/Sao_Paulo')) = MONTH(current_timestamp())",
+    "AND DAY(from_utc_timestamp(updated_at,'America/Sao_Paulo')) = DAY(current_timestamp());"
+  ],
+  "custom_description_lines": [
+    "{{#QUERY_RESULT_ROWS}}",
+    "📊 Registros inválidos: {{registros_invalidos}}<br>",
+    "🕒 Registros referente a data: {{horario_alerta}}<br>",
+    "{{/QUERY_RESULT_ROWS}}<br><br>",
+    "",
+    "Verifique o alerta {{ALERT_URL}} e a tabela <b>bees-teste-jp.default.quarantine_openbrewery</b> para análise dos erros de Data Quality."
+  ]
+}
