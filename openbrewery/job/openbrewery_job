@@ -1,0 +1,68 @@
+# Upgrade Databricks SDK to the latest version and restart Python to see updated packages
+%pip install --upgrade databricks-sdk==0.70.0
+%restart_python
+
+from databricks.sdk.service.jobs import JobSettings as Job
+
+
+openbrewery = Job.from_dict(
+    {
+        "name": "openbrewery",
+        "email_notifications": {
+            "on_success": [
+                "joaojosue99@hotmail.com",
+            ],
+            "on_failure": [
+                "joaojosue99@hotmail.com",
+            ],
+        },
+        "schedule": {
+            "quartz_cron_expression": "26 0 2 * * ?",
+            "timezone_id": "America/Sao_Paulo",
+            "pause_status": "UNPAUSED",
+        },
+        "tasks": [
+            {
+                "task_key": "01_bronze_autoloader_ingestion",
+                "notebook_task": {
+                    "notebook_path": "/Workspace/Users/joaojosue99@hotmail.com/BEES-Data-Engineering-Test-Joao-Pedro/openbrewery/bronze/bronze_ingestion_openbrewery",
+                    "source": "WORKSPACE",
+                },
+            },
+            {
+                "task_key": "02_silver_transform",
+                "depends_on": [
+                    {
+                        "task_key": "01_bronze_autoloader_ingestion",
+                    },
+                ],
+                "notebook_task": {
+                    "notebook_path": "/Workspace/Users/joaojosue99@hotmail.com/BEES-Data-Engineering-Test-Joao-Pedro/openbrewery/silver/silver_ingestion_openbrewery",
+                    "source": "WORKSPACE",
+                },
+            },
+            {
+                "task_key": "03_gold_aggregation",
+                "depends_on": [
+                    {
+                        "task_key": "02_silver_transform",
+                    },
+                ],
+                "notebook_task": {
+                    "notebook_path": "/Workspace/Users/joaojosue99@hotmail.com/BEES-Data-Engineering-Test-Joao-Pedro/openbrewery/gold/gold_ingestion_openbrewery",
+                    "source": "WORKSPACE",
+                },
+            },
+        ],
+        "queue": {
+            "enabled": True,
+        },
+        "performance_target": "PERFORMANCE_OPTIMIZED",
+    }
+)
+
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+w.jobs.reset(new_settings=openbrewery, job_id=797793240716236)
+# or create a new job using: w.jobs.create(**openbrewery.as_shallow_dict())
